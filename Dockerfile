@@ -1,5 +1,5 @@
 # Use the official Node.js 16 image as the base image
-FROM node:16
+FROM node:16-alpine
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -14,6 +14,8 @@ RUN npm install
 COPY . .
 
 # Build the React app
+
+RUN npm config set registry https://registry.npmmirrors.com
 RUN npm run build
 
 # Expose the port that the app will run on (usually 3000 by default)

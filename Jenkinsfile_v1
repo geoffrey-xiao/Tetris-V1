@@ -1,0 +1,68 @@
+pipeline{
+  agent any
+  tools{
+    jdk 'jdk17'
+    nodejs 'nodejs16'
+  }
+  environment {
+    SCANNER_HOME=tool 'sonar-scanner'
+  }
+  stages{
+    stage('clean Workspace'){
+      steps{
+        cleanWs()
+      }
+    }
+    stage('checkout from Git'){
+      steps{
+        git branch: 'main', url: 'https://github.com/geoffrey-xiao/Tetris-V1.git'
+      }
+    }
+    stage('Sonarqube Analysis '){
+      steps{
+        withSonarQubeEnv('sonar-server') {
+          sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=TetrisVersion1.0 \
+          -Dsonar.projectKey=TetrisVersion1.0 '''
+        }
+      }
+    }
+    stage("quality gate"){
+      steps{
+        waitForQualityGate abortPipeline: false, credentialsId: 'sonar-token'
+      }
+    }
+    stage('Install dependencies'){
+      steps{
+        sh 'npm config set registry https://registry.npmmirror.com'
+        sh 'npm install'
+      }
+    }
+    stage('OWASP FS SCAN'){
+      steps{
+        dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
+        dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+      }
+    }
+    stage{
+      steps{
+        sh "trivy fs . > trivyfs.txt"
+      }
+    }
+    stage('Docker Build & Push'){
+      steps{
+        script{
+          withDockerRegistry(credentialsId: "docker", toolName:'docker') {
+            sh "docker build -t tetrisv1 ."
+            sh "docker tag tetrisv1 geoffreyxiao/tetrisv1:latest"
+            sh "docker push geoffreyxiao/tetrisv1:latest"
+          }
+        }
+      }
+    }
+    stage('TRIVY'){
+      steps{
+        sh "trivy image geoffreyxiao/tetrisv1:latest > trivyimage.txt"
+      }
+    }
+  }
+}
