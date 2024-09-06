@@ -8,6 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install project dependencies
+RUN npm config set registry https://registry.npmmirrors.com
 RUN npm install
 
 # Copy the rest of the application code to the container
@@ -15,7 +16,7 @@ COPY . .
 
 # Build the React app
 
-RUN npm config set registry https://registry.npmmirrors.com
+
 RUN npm run build
 
 # Expose the port that the app will run on (usually 3000 by default)
