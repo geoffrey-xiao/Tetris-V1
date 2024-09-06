@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install project dependencies
-RUN npm config set registry https://registry.npmmirrors.com
+RUN npm config set registry https://registry.npmmirror.com
 RUN npm install
 
 # Copy the rest of the application code to the container
